@@ -6,12 +6,19 @@ let draggedPiece = null;
 let sourceSquare = null;
 let playerRole = null;
 
-// Helper to convert board coordinates to algebraic notation
+// Load sounds
+const sounds = {
+    move: new Audio("/sounds/move.mp3"),
+    capture: new Audio("/sounds/capture.mp3"),
+    check: new Audio("/sounds/check.mp3"),
+    gameover: new Audio("/sounds/gameover.mp3")
+};
+
 const getSquareName = (row, col) => `${String.fromCharCode(97 + col)}${8 - row}`;
 
 const renderBoard = () => {
     const board = chess.board();
-    boardElement.innerHTML = ""; // Clear the board
+    boardElement.innerHTML = "";
 
     board.forEach((row, rowIndex) => {
         row.forEach((square, colIndex) => {
@@ -23,6 +30,14 @@ const renderBoard = () => {
 
             squareElement.dataset.row = rowIndex;
             squareElement.dataset.col = colIndex;
+
+            squareElement.addEventListener("mouseenter", () => {
+                squareElement.classList.add("highlight");
+            });
+
+            squareElement.addEventListener("mouseleave", () => {
+                squareElement.classList.remove("highlight");
+            });
 
             if (square) {
                 const pieceElement = document.createElement("span");
@@ -46,9 +61,7 @@ const renderBoard = () => {
                 squareElement.appendChild(pieceElement);
             }
 
-            squareElement.addEventListener("dragover", (e) => {
-                e.preventDefault();
-            });
+            squareElement.addEventListener("dragover", (e) => e.preventDefault());
 
             squareElement.addEventListener("drop", (e) => {
                 e.preventDefault();
@@ -70,13 +83,18 @@ const renderBoard = () => {
     } else {
         boardElement.classList.remove("flipped");
     }
+
+    const turnDisplay = document.getElementById("turnDisplay");
+    if (turnDisplay) {
+        turnDisplay.textContent = `Turn: ${chess.turn() === 'w' ? 'White' : 'Black'}`;
+    }
 };
 
 const handleMove = (source, target) => {
     const move = {
         from: getSquareName(source.row, source.col),
         to: getSquareName(target.row, target.col),
-        promotion: "q" // Always promote to a queen
+        promotion: "q"
     };
 
     socket.emit("move", move);
@@ -84,24 +102,39 @@ const handleMove = (source, target) => {
 
 const getPieceUnicode = (piece) => {
     const unicodePieces = {
-        p: "♟",
-        r: "♜",
-        n: "♞",
-        b: "♝",
-        q: "♛",
-        k: "♚",
-        P: "♙",
-        R: "♖",
-        N: "♘",
-        B: "♗",
-        Q: "♕",
-        K: "♔"
+        p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚",
+        P: "♙", R: "♖", N: "♘", B: "♗", Q: "♕", K: "♔"
     };
-
     return unicodePieces[piece.type] || "";
 };
 
-// Socket event handlers
+function showGameOverScreen() {
+    const modal = document.getElementById("gameOverModal");
+    const text = document.getElementById("gameOverText");
+
+    if (chess.in_checkmate()) {
+        text.textContent = `Checkmate! ${chess.turn() === 'w' ? 'Black' : 'White'} wins!`;
+    } else if (chess.in_stalemate()) {
+        text.textContent = "Stalemate!";
+    } else if (chess.insufficient_material()) {
+        text.textContent = "Draw by insufficient material.";
+    } else if (chess.in_threefold_repetition()) {
+        text.textContent = "Draw by repetition.";
+    } else if (chess.in_draw()) {
+        text.textContent = "Draw!";
+    } else {
+        text.textContent = "Game Over";
+    }
+
+    sounds.gameover.play();
+    modal.classList.remove("hidden");
+}
+
+function restartGame() {
+    window.location.reload();
+}
+
+// Socket Events
 socket.on("playerRole", function(role) {
     playerRole = role;
     renderBoard();
@@ -113,14 +146,30 @@ socket.on("spectatorRole", function() {
 });
 
 socket.on("boardState", function(fen) {
+    const prevFen = chess.fen();
     chess.load(fen);
     renderBoard();
+
+    const lastMove = chess.history({ verbose: true }).at(-1);
+    if (!lastMove) return;
+
+    // Detect capture, check, or regular move
+    if (lastMove.captured) {
+        sounds.capture.play();
+    } else if (chess.in_check()) {
+        sounds.check.play();
+    } else if (chess.game_over()) {
+        sounds.gameover.play();
+    } else {
+        sounds.move.play();
+    }
+
+    if (chess.game_over()) {
+        showGameOverScreen();
+    }
 });
 
 socket.on("move", function(move) {
     chess.move(move);
     renderBoard();
 });
-
-// Initial render
-renderBoard();
