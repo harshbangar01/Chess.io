@@ -1,76 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess.io</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess Game - by Harsh</title>
+    <meta name="description" content="Play chess online in real time with friends or spectators. Multiplayer chess game powered by socket.io and chess.js.">
+    <link rel="icon" href="https://imgs.search.brave.com/JG0mPBDIbTp4GHqCdSZqoKpJmUSd4470XH7RKhOKJmA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMuZnJlZWltYWdl/cy5jb20vZmljL2lt/YWdlcy9pY29ucy8x/MjMzL3NvbWF0aWNf/cmViaXJ0aF9hcHBz/LzI1Ni9jaGVzcy5w/bmc" type="image/x-icon" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="https://imgs.search.brave.com/JG0mPBDIbTp4GHqCdSZqoKpJmUSd4470XH7RKhOKJmA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMuZnJlZWltYWdl/cy5jb20vZmljL2lt/YWdlcy9pY29ucy8x/MjMzL3NvbWF0aWNf/cmViaXJ0aF9hcHBz/LzI1Ni9jaGVzcy5w/bmc" type="image/x-icon">
-   <style>
-        .chessboard {
-            display: grid;
-            grid-template-columns: repeat(8, minmax(0, 1fr));
-            grid-template-rows: repeat(8, minmax(0, 1fr));
-            width: 600px;
-            height: 600px;
-            transform: rotate(0deg);
-        }
 
-        .piece.white {
-            color: white;
-            filter: drop-shadow(0 0 2px rgba(0, 0, 0, 1));
-        }
+    <style>
+          .chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      aspect-ratio: 1 / 1; /* Ensures square shape */
+      max-width: 100vmin; /* Limit board size to fit viewport */
+    }
 
-        .piece.black {
-            color: black;
-        }
+    .square {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        .flipped {
-            transform: rotate(180deg);
-        }
+    .square.light {
+      background-color: #f0d9b5;
+    }
 
-        .square {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .square.dark {
+      background-color: #b58863;
+    }
 
-        .square.light {
-            background-color: #f0d9b5;
-        }
+    .piece {
+      font-size: clamp(1.5rem, 4vw, 3rem); /* Responsive piece size */
+      cursor: pointer;
+    }
 
-        .square.dark {
-            background-color: #b58863;
-        }
+    .piece.white {
+      color: white;
+      filter: drop-shadow(0 0 2px rgba(0, 0, 0, 1));
+    }
 
-        .piece {
-            font-size: 36px;
-            cursor: pointer;
-        }
+    .piece.black {
+      color: black;
+    }
 
-        .piece.draggable {
-            cursor: grab;
-        }
+    .flipped {
+      transform: rotate(180deg);
+    }
 
-        .dragging {
-            opacity: 0.5;
-        }
+    .flipped .piece {
+      transform: rotate(180deg);
+    }
 
-        /* Rotate pieces for black player */
-        .flipped .piece {
-            transform: rotate(180deg);
-        }
+    .dragging {
+      opacity: 0.5;
+    }
     </style>
 </head>
-<body>
-    <div class="w-full h-screen bg-zinc-900 justify-center items-center flex flex-col">
-        <div class="chessboard w-96 h-96 bg-red-800">
+<body class="bg-zinc-900 flex flex-col items-center justify-center min-h-screen text-white p-4">
 
-        </div>
+    <h1 class="text-2xl md:text-3xl font-bold mb-4 text-center"> – ♟ Chess.io –</h1>
+
+    <div class="chessboard w-full max-w-[600px]">
+        <!-- The board will be rendered here by JS -->
     </div>
 
+    <!-- External Libraries -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" integrity="sha512-xRllwz2gdZciIB+AkEbeq+gVhX8VB8XsfqeFbUh+SzHlN96dEduwtTuVuc2u9EROlmW9+yhRlxjif66ORpsgVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Your Chess Game Script -->
     <script src="/js/chessgame.js"></script>
 </body>
 </html>

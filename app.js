@@ -10,7 +10,6 @@ const io = socket(server);
 
 const chess = new Chess();
 let players = {};
-let currentPlayer = 'w';
 
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,49 +21,48 @@ app.get('/', (req, res) => {
 io.on("connection", function (uniquesocket) {
     console.log("connected");
 
+    // Assign player roles
     if (!players.white) {
         players.white = uniquesocket.id;
         uniquesocket.emit("playerRole", "w");
-    }
-    else if (!players.black) {
+    } else if (!players.black) {
         players.black = uniquesocket.id;
         uniquesocket.emit("playerRole", "b");
-    }
-    else {
+    } else {
         uniquesocket.emit("spectatorRole");
     }
 
     uniquesocket.on("disconnect", function () {
-        if(socket.id === players.white) {
+        if (uniquesocket.id === players.white) {
             delete players.white;
-        } else if (socket.id === players.black) {
+        } else if (uniquesocket.id === players.black) {
             delete players.black;
         }
     });
 
     uniquesocket.on("move", (move) => {
-        try{
-            if (chess.turn() === 'w' && uniquesocket.id !== players.white) return;
-            if (chess.turn() === 'b' && uniquesocket.id !== players.black) return;
+        try {
+            const playerColor = uniquesocket.id === players.white ? 'w' :
+                                uniquesocket.id === players.black ? 'b' : null;
+
+            if (playerColor !== chess.turn()) return;
 
             const result = chess.move(move);
-            if(result){
-                currentPlayer = chess.turn();
+            if (result) {
                 io.emit("move", move);
                 io.emit("boardState", chess.fen());
+            } else {
+                console.log("Invalid move:", move);
+                uniquesocket.emit("invalidMove", { move, error: "Invalid move" });
             }
-            else{
-                console.log("Invalid move : ", move);
-                uniquesocket.emit("invalidMove", move);
-            }
-        } catch(err){
+        } catch (err) {
             console.log(err);
-            uniquesocket.emit("Invaild move : ", move);
+            uniquesocket.emit("invalidMove", { move, error: err.message });
         }
     });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
