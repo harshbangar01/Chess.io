@@ -16,6 +16,14 @@ const sounds = {
 
 const getSquareName = (row, col) => `${String.fromCharCode(97 + col)}${8 - row}`;
 
+const getPieceUnicode = (piece) => {
+    const unicodePieces = {
+        p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚",
+        P: "♙", R: "♖", N: "♘", B: "♗", Q: "♕", K: "♔"
+    };
+    return unicodePieces[piece.type] || "";
+};
+
 const renderBoard = () => {
     const board = chess.board();
     boardElement.innerHTML = "";
@@ -27,7 +35,6 @@ const renderBoard = () => {
                 "square",
                 (rowIndex + colIndex) % 2 === 0 ? "light" : "dark"
             );
-
             squareElement.dataset.row = rowIndex;
             squareElement.dataset.col = colIndex;
 
@@ -45,6 +52,7 @@ const renderBoard = () => {
                 pieceElement.innerText = getPieceUnicode(square);
                 pieceElement.draggable = playerRole === square.color;
 
+                // Mouse drag
                 pieceElement.addEventListener("dragstart", (e) => {
                     if (pieceElement.draggable) {
                         draggedPiece = pieceElement;
@@ -56,6 +64,15 @@ const renderBoard = () => {
                 pieceElement.addEventListener("dragend", () => {
                     draggedPiece = null;
                     sourceSquare = null;
+                });
+
+                // Touch drag
+                pieceElement.addEventListener("touchstart", (e) => {
+                    if (pieceElement.draggable) {
+                        draggedPiece = pieceElement;
+                        sourceSquare = { row: rowIndex, col: colIndex };
+                        e.preventDefault(); // Prevent scroll
+                    }
                 });
 
                 squareElement.appendChild(pieceElement);
@@ -71,6 +88,18 @@ const renderBoard = () => {
                         col: parseInt(squareElement.dataset.col)
                     };
                     handleMove(sourceSquare, targetSquare);
+                }
+            });
+
+            squareElement.addEventListener("touchend", (e) => {
+                if (draggedPiece) {
+                    const targetSquare = {
+                        row: parseInt(squareElement.dataset.row),
+                        col: parseInt(squareElement.dataset.col)
+                    };
+                    handleMove(sourceSquare, targetSquare);
+                    draggedPiece = null;
+                    sourceSquare = null;
                 }
             });
 
@@ -100,14 +129,6 @@ const handleMove = (source, target) => {
     socket.emit("move", move);
 };
 
-const getPieceUnicode = (piece) => {
-    const unicodePieces = {
-        p: "♟", r: "♜", n: "♞", b: "♝", q: "♛", k: "♚",
-        P: "♙", R: "♖", N: "♘", B: "♗", Q: "♕", K: "♔"
-    };
-    return unicodePieces[piece.type] || "";
-};
-
 function showGameOverScreen() {
     const modal = document.getElementById("gameOverModal");
     const text = document.getElementById("gameOverText");
@@ -130,11 +151,7 @@ function showGameOverScreen() {
     modal.classList.remove("hidden");
 }
 
-function restartGame() {
-    window.location.reload();
-}
-
-// Socket Events
+// Socket events
 socket.on("playerRole", function(role) {
     playerRole = role;
     renderBoard();
@@ -153,7 +170,6 @@ socket.on("boardState", function(fen) {
     const lastMove = chess.history({ verbose: true }).at(-1);
     if (!lastMove) return;
 
-    // Detect capture, check, or regular move
     if (lastMove.captured) {
         sounds.capture.play();
     } else if (chess.in_check()) {
