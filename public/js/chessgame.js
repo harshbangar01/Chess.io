@@ -189,3 +189,39 @@ socket.on("move", function(move) {
     chess.move(move);
     renderBoard();
 });
+
+
+
+// Touch handling patch
+let touchedSquare = null;
+
+pieceElement.addEventListener("touchstart", (e) => {
+    if (pieceElement.draggable) {
+        draggedPiece = pieceElement;
+        sourceSquare = { row: rowIndex, col: colIndex };
+        e.preventDefault();
+    }
+});
+
+pieceElement.addEventListener("touchmove", (e) => {
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && target.classList.contains("square")) {
+        touchedSquare = target;
+    }
+    e.preventDefault();
+});
+
+pieceElement.addEventListener("touchend", () => {
+    if (draggedPiece && touchedSquare) {
+        const targetSquare = {
+            row: parseInt(touchedSquare.dataset.row),
+            col: parseInt(touchedSquare.dataset.col)
+        };
+        handleMove(sourceSquare, targetSquare);
+    }
+
+    draggedPiece = null;
+    sourceSquare = null;
+    touchedSquare = null;
+});
